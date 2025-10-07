@@ -35,11 +35,22 @@ const Index = () => {
   ];
 
   const filteredCountries = useMemo(() => {
-    if (!searchQuery) return countries;
-    return countries.filter(country => 
-      country.name.toLowerCase().includes(searchQuery.toLowerCase())
+    let filtered = countries;
+    
+    // Фильтруем по зоне
+    filtered = filtered.filter(country => 
+      country.zone === selectedZone || country.blocked
     );
-  }, [searchQuery]);
+    
+    // Фильтруем по поисковому запросу
+    if (searchQuery) {
+      filtered = filtered.filter(country => 
+        country.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [searchQuery, selectedZone]);
 
   const handleConfirm = () => {
     setConfirmed(true);
@@ -199,8 +210,23 @@ const Index = () => {
                     <button
                       key={zone.id}
                       onClick={() => {
-                        setSelectedZone(zone.name);
+                        const newZone = zone.name;
+                        setSelectedZone(newZone);
                         setIsZoneOpen(false);
+                        
+                        // Если текущая страна не принадлежит новой зоне, выбираем первую доступную страну из новой зоны
+                        const currentCountryInZone = countries.find(
+                          c => c.name === selectedCountry && c.zone === newZone
+                        );
+                        
+                        if (!currentCountryInZone) {
+                          const firstAvailableCountry = countries.find(
+                            c => c.zone === newZone && c.available
+                          );
+                          if (firstAvailableCountry) {
+                            setSelectedCountry(firstAvailableCountry.name);
+                          }
+                        }
                       }}
                       className={`
                         w-full p-4 text-left transition-all duration-200 border-b border-primary/10 last:border-b-0
